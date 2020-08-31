@@ -52,6 +52,8 @@ std::string GetTxnOutputType(TxoutType t)
     case TxoutType::PUBKEYHASH: return "pubkeyhash";
     case TxoutType::SCRIPTHASH: return "scripthash";
     case TxoutType::MULTISIG: return "multisig";
+    // implemented here
+    case TxoutType::NEWMULTISIG: return "newmultisig";
     case TxoutType::NULL_DATA: return "nulldata";
     case TxoutType::WITNESS_V0_KEYHASH: return "witness_v0_keyhash";
     case TxoutType::WITNESS_V0_SCRIPTHASH: return "witness_v0_scripthash";
@@ -103,6 +105,27 @@ static bool MatchMultisig(const CScript& script, unsigned int& required, std::ve
     if (!IsSmallInteger(opcode)) return false;
     unsigned int keys = CScript::DecodeOP_N(opcode);
     if (pubkeys.size() != keys || keys < required) return false;
+    return (it + 1 == script.end());
+}
+
+// implemented here
+static bool MatchNewMultisig(const CScript& script, unsigned int& nrequired, unsigned int& required, std::vector<valtype>& pubkeys)
+{
+    opcodetype opcode;
+    valtype data;
+    CScript::const_iterator it = script.begin();
+    if (script.size() < 1 || script.back() != OP_CHECKNEWMULTISIG) return false;
+
+    if (!script.GetOp(it, opcode, data) || !IsSmallInteger(opcode)) return false;
+    nrequired = CScript::DecodeOP_N(opcode);
+    if (!script.GetOp(it, opcode, data) || !IsSmallInteger(opcode)) return false;
+    required = CScript::DecodeOP_N(opcode);
+    while (script.GetOp(it, opcode, data) && CPubKey::ValidSize(data)) {
+        pubkeys.emplace_back(std::move(data));
+    }
+    if (!IsSmallInteger(opcode)) return false;
+    unsigned int keys = CScript::DecodeOP_N(opcode);
+    if (pubkeys.size() != keys || keys < required + nrequired) return false;
     return (it + 1 == script.end());
 }
 
@@ -165,6 +188,17 @@ TxoutType Solver(const CScript& scriptPubKey, std::vector<std::vector<unsigned c
         vSolutionsRet.insert(vSolutionsRet.end(), keys.begin(), keys.end());
         vSolutionsRet.push_back({static_cast<unsigned char>(keys.size())}); // safe as size is in range 1..16
         return TxoutType::MULTISIG;
+    }
+
+    // implemented here
+    unsigned int nrequired;
+    std::vector<std::vector<unsigned char>> keys;
+    if (MatchNewMultisig(scriptPubKey, nrequired, required, keys)) {
+        vSolutionsRet.push_back({static_cast<unsigned char>(nrequired)});
+        vSolutionsRet.push_back({static_cast<unsigned char>(required)});
+        vSolutionsRet.insert(vSolutionsRet.end(), keys.begin(), keys.end());
+        vSolutionsRet.push_back({static_cast<unsigned char>(keys.size())});
+        return TxoutType::NEWMULTISIG;
     }
 
     vSolutionsRet.clear();

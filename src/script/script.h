@@ -187,6 +187,9 @@ enum opcodetype
     OP_NOP9 = 0xb8,
     OP_NOP10 = 0xb9,
 
+    // implemented here
+    OP_CHECKNEWMULTISIG = 0xba,
+
     OP_INVALIDOPCODE = 0xff,
 };
 

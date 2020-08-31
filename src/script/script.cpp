@@ -142,6 +142,9 @@ std::string GetOpName(opcodetype opcode)
 
     case OP_INVALIDOPCODE          : return "OP_INVALIDOPCODE";
 
+    // implemented here
+    case OP_CHECKNEWMULTISIG       : return "OP_CHECKNEWMULTISIG";
+
     default:
         return "OP_UNKNOWN";
     }
@@ -159,7 +162,8 @@ unsigned int CScript::GetSigOpCount(bool fAccurate) const
             break;
         if (opcode == OP_CHECKSIG || opcode == OP_CHECKSIGVERIFY)
             n++;
-        else if (opcode == OP_CHECKMULTISIG || opcode == OP_CHECKMULTISIGVERIFY)
+        // implemented here
+        else if (opcode == OP_CHECKMULTISIG || opcode == OP_CHECKMULTISIGVERIFY || opcode == OP_CHECKNEWMULTISIG)
         {
             if (fAccurate && lastOpcode >= OP_1 && lastOpcode <= OP_16)
                 n += DecodeOP_N(lastOpcode);

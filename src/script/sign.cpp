@@ -159,6 +159,39 @@ static bool SignStep(const SigningProvider& provider, const BaseSignatureCreator
         }
         return ok;
     }
+    // implemented here
+    case TxoutType::NEWMULTISIG: {
+        // push negative signatures
+        size_t nrequired = vSolutions[0][0], required = vSolutions[1][0];
+        ret.push_back(valtype());
+        for (size_t i = 2; i < vSolutions.size() - 1; ++i) {
+            CPubKey pubkey = CPubKey(vSolutions[i]);
+            if (CreateSig(creator, sigdata, provider, sig, pubkey, scriptPubKey, sigversion)) {
+                if (ret.size() < nrequired + 1) {
+                    ret.push_back(std::move(sig));
+                }
+            }
+        }
+        bool ok = ret.size() == nrequired + 1;
+        for (size_t i = 0; i + ret.size() < nrequired + 1; ++i) {
+            ret.push_back(valtype());
+        }
+
+        // push signatures
+        for (size_t i = 2; i < vSolutions.size() - 1; ++i) {
+            CPubKey pubkey = CPubKey(vSolutions[i]);
+            if (CreateSig(creator, sigdata, provider, sig, pubkey, scriptPubKey, sigversion)) {
+                if (ret.size() < nrequired + required + 1) {
+                    ret.push_back(std::move(sig));
+                }
+            }
+        }
+        ok = ok && (ret.size() == nrequired + required + 1);
+        for (size_t i = 0; i + ret.size() < nrequired + required + 1; ++i) {
+            ret.push_back(valtype());
+        }
+        return ok;
+    }
     case TxoutType::WITNESS_V0_KEYHASH:
         ret.push_back(vSolutions[0]);
         return true;
