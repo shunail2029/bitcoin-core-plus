@@ -1,3 +1,8 @@
+# bitcoin-core-plus
+
+This Repository is copied from [https://github.com/bitcoin/bitcoin](https://github.com/bitcoin/bitcoin) and modified.
+
+
 Bitcoin Core integration/staging tree
 =====================================
 
